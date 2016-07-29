@@ -1,0 +1,12 @@
+#!/bin/sh -e
+PREREQS=""
+case $1 in
+        prereqs) echo "${PREREQS}"; exit 0;;
+esac
+. /usr/share/initramfs-tools/hook-functions
+if [ -f "/lib/firmware/am335x-pru0-fw" ]; then
+	cp /lib/firmware/am335x-pru0-fw "${DESTDIR}/lib/firmware"
+fi
+if [ -f "/lib/firmware/am335x-pru1-fw" ]; then
+	cp /lib/firmware/am335x-pru1-fw "${DESTDIR}/lib/firmware"
+fi
