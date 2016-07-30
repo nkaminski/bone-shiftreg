@@ -1,4 +1,5 @@
-#include "shiftreg.h"
+#include "registers.h"
+#include "shiftreg_pru.h"
 
 void shiftreg_clear(shiftreg_t *sr){
  	//set clear and make sure clock is zero
@@ -21,8 +22,9 @@ void shiftreg_iterate(shiftreg_t *sr, char *pwmval, unsigned char count){
   int i, end;
   end = min(sr->nbits, MAX_BITS);
 	R30_CLR(sr->serclk);
+  
   for(i=end-1; i>=0; i--){
-    if(count < pwmval[i]){
+    if(count <= pwmval[i]){
         //Shift out a 1
         R30_SET(sr->ser);
     }

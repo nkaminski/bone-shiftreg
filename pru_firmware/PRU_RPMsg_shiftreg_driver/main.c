@@ -7,16 +7,16 @@
  * are met:
  *
  *	* Redistributions of source code must retain the above copyright
- *	  notice, this list of conditions and the following disclaimer.
+ *		notice, this list of conditions and the following disclaimer.
  *
  *	* Redistributions in binary form must reproduce the above copyright
- *	  notice, this list of conditions and the following disclaimer in the
- *	  documentation and/or other materials provided with the
- *	  distribution.
+ *		notice, this list of conditions and the following disclaimer in the
+ *		documentation and/or other materials provided with the
+ *		distribution.
  *
  *	* Neither the name of Texas Instruments Incorporated nor the names of
- *	  its contributors may be used to endorse or promote products derived
- *	  from this software without specific prior written permission.
+ *		its contributors may be used to endorse or promote products derived
+ *		from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -33,12 +33,14 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <pru_cfg.h>
 #include <pru_intc.h>
 #include <rsc_types.h>
 #include <pru_rpmsg.h>
 #include "registers.h"
-#include "shiftreg.h"
+#include "commands.h"
+#include "shiftreg_pru.h"
 #include "resource_table_0.h"
 
 /* Host-0 Interrupt sets bit 30 in register R31 */
@@ -80,7 +82,7 @@ void main(void)
   shiftreg_t reg;
   char ser1_buf[MAX_BITS];
   unsigned char itercounter;
-  
+  char rstatus; 
   /* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
@@ -98,23 +100,21 @@ void main(void)
 	while (pru_rpmsg_channel(RPMSG_NS_CREATE, &transport, CHAN_NAME, CHAN_DESC, CHAN_PORT) != PRU_RPMSG_SUCCESS);
 	
   /* Initilaize the shift register output subsystem */
-  itercounter++;
-	reg.ser = 14;
-	reg.serclk = 15;
-	reg.latch = 16;
-	reg.clear = 17;
-	reg.nbits = 3;
-  ser1_buf[0] = 0;
-  ser1_buf[1] = 100;
-  ser1_buf[2] = 200;
+  itercounter=0;
+  reg.ser = 0;
+  reg.serclk = 1;
+  reg.latch = 2;
+  reg.clear = 3;
+  reg.nbits = 8;
+	memset(ser1_buf,0x00,MAX_BITS);
   shiftreg_clear(&reg);
-  
   while (1) {
     /* shift register output */
-
-    shiftreg_iterate(&reg, &ser1_buf, itercounter);
+    shiftreg_iterate(&reg, ser1_buf, itercounter);
     itercounter++;
-
+    if(itercounter > 127){
+	itercounter=1;
+    }
     /* Control message handling */
 		/* Check bit 30 of register R31 to see if the ARM has kicked us */
 		if (__R31 & HOST_INT) {
@@ -122,10 +122,29 @@ void main(void)
 			CT_INTC.SICR_bit.STS_CLR_IDX = FROM_ARM_HOST;
 			/* Receive all available messages, multiple messages can be sent per kick */
 			while (pru_rpmsg_receive(&transport, &src, &dst, payload, &len) == PRU_RPMSG_SUCCESS) {
-				//TODO handle incoming control messages
-        /* Echo the message back to the same address from which we just received */
-				//pru_rpmsg_send(&transport, dst, src, payload, len);
+				/* handle incoming control messages */
+				rstatus = 0;
+				if(len != 3){
+					continue;
+				}
+				/* Switch based on opcode and return the opcode if successful, 0x00 if not */
+				switch(payload[0]){
+					case SET_PWM:
+						if(payload[1] < MAX_BITS){
+							ser1_buf[payload[1]] = payload[2];
+							rstatus = SET_PWM;	
+						}
+						break;
+					case SET_NBITS:
+						if(*((uint16_t *)(payload+1)) <= MAX_BITS){
+							reg.nbits = *((uint16_t *)(payload+1));
+							rstatus = SET_NBITS;
+						}
+						break;												
+				}
+				
+				pru_rpmsg_send(&transport, dst, src, &rstatus, 1);
 			}
 		}
-	}
+    }
 }

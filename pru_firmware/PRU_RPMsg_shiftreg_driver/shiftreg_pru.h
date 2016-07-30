@@ -2,7 +2,9 @@
 #define SHIFTREG_H
 
 #define MAX_BITS 256
-#define BIT_TIME_CYC 128
+#define BIT_TIME_CYC 16
+
+#define min(X, Y)  ((X) < (Y) ? (X) : (Y))
 
 typedef struct {
     unsigned int nbits;
