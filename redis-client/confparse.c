@@ -10,12 +10,23 @@
 
 
 /* validates a positive numeric option */
-int conf_validate_pnumeric(cfg_t *cfg, cfg_opt_t *opt)
+int conf_validate_pnznumeric(cfg_t *cfg, cfg_opt_t *opt)
 {
   int value = cfg_opt_getnint(opt, 0);
 
   if (value <= 0) {
-    cfg_error(cfg, "Invalid numeric value %d in section '%s'", value, cfg_name(cfg));
+    cfg_error(cfg, "Invalid positive, nonzero numeric value %d in section '%s'", value, opt->name);
+    return -1;
+  }
+  return 0;
+}
+/* validates a positive or zero numeric option */
+int conf_validate_pnumeric(cfg_t *cfg, cfg_opt_t *opt)
+{
+  int value = cfg_opt_getnint(opt, 0);
+
+  if (value < 0) {
+    cfg_error(cfg, "Invalid positive numeric value %d in section '%s'", value, opt->name);
     return -1;
   }
   return 0;
@@ -26,10 +37,10 @@ int conf_validate_isset(cfg_t *cfg, cfg_opt_t *opt)
   int value = cfg_opt_size(opt);
 
   if (value == 0) {
-    cfg_error(cfg, "Required configuration option '%s' is missing!", cfg_name(cfg));
+    cfg_error(cfg, "Required configuration option '%s' is missing!", opt->name);
     return -1;
   }
-  return -1;
+  return 0;
 }
 cfg_t *parse_conf(const char *filename)
 {
@@ -48,9 +59,9 @@ cfg_t *parse_conf(const char *filename)
   cfg_t *cfg = cfg_init(opts, CFGF_NONE);
 
   cfg_set_validate_func(cfg, "redis-host", conf_validate_isset);
-  cfg_set_validate_func(cfg, "redis-port", conf_validate_pnumeric);
-  cfg_set_validate_func(cfg, "start-address", conf_validate_isset);
-  cfg_set_validate_func(cfg, "num-channels", conf_validate_isset);
+  cfg_set_validate_func(cfg, "redis-port", conf_validate_pnznumeric);
+  cfg_set_validate_func(cfg, "start-address", conf_validate_pnumeric);
+  cfg_set_validate_func(cfg, "num-channels", conf_validate_pnznumeric);
   
   switch (cfg_parse(cfg, filename)) {
     case CFG_FILE_ERROR:
