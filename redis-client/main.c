@@ -4,11 +4,13 @@
 #include <locale.h>
 #include <hiredis.h>
 #include "confparse.h"
+#include "io.h"
 
 int main (int argc, char **argv) {
   cfg_t *cfg;
   redisContext *c ;
   redisReply *reply;
+  int iofd;
   /* Localize messages & types according to environment, since v2.9 */
   setlocale(LC_MESSAGES, "");
   setlocale(LC_CTYPE, "");
@@ -19,6 +21,16 @@ int main (int argc, char **argv) {
     fprintf(stderr,"Error parsing configuration file!\n");
     return 1;
   }
+  /* Open remoteproc device */
+  //if((iofd = io_init(cfg_getstr(cfg,"pru-remoteproc-file"))) < 0){
+  //  fprintf(stderr,"Failed to open remoteproc device file\n");
+  //  return 1;
+  //}
+  /* Set output channel count */
+  //if(io_set_nchannels(iofd, cfg_getint(cfg,"num-channels")) < 0){
+  //  io_close(iofd);
+  //  return 1;
+  //}
   /* Establish Redis connection */
   printf("Connecting to redis at %s, port %ld\n", cfg_getstr(cfg,"redis-host"), cfg_getint(cfg,"redis-port"));
   c = redisConnect(cfg_getstr(cfg,"redis-host"), cfg_getint(cfg,"redis-port"));

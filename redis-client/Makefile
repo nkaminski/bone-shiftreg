@@ -1,30 +1,30 @@
 #
 # 'make depend' uses makedepend to automatically generate dependencies 
 #               (dependencies are added to end of Makefile)
-# 'make'        build executable file 'mycc'
+# 'make'        build executable file
 # 'make clean'  removes all .o and executable files
 #
 
-# define the C compiler to use
+# C compiler to use
 CC = gcc
 
-# define any compile-time flags
+# compile-time flags
 CFLAGS = -Wall
 
 # define any directories containing header files other than the default
 #
-INCLUDES = -I. $(shell pkg-config libconfuse hiredis --cflags)
+INCLUDES = -I. -I../pru_firmware/PRU_RPMsg_shiftreg_driver/ $(shell pkg-config libconfuse hiredis --cflags)
 
 # define library paths in addition to the default
 LFLAGS = 
 
-# define any libraries to link into executable:
+# libraries to link into executable:
 LIBS = $(shell pkg-config libconfuse hiredis --libs)
 
-# define the C source files
-SRCS = main.c confparse.c
+# C source files
+SRCS = main.c confparse.c io.c
 
-# define the C object files 
+# C object files 
 #
 # This uses Suffix Replacement within a macro:
 #   $(name:string1=string2)
