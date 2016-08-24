@@ -80,8 +80,8 @@ void main(void)
 	volatile uint8_t *status;
   /* Shift register output types */
   shiftreg_t reg;
-  char ser1_buf[MAX_BITS];
-  register unsigned char itercounter;
+  char ser0_buf[MAX_BITS];
+  unsigned char itercounter;
   char rstatus; 
   /* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
@@ -106,11 +106,11 @@ void main(void)
   reg.latch = 2;
   reg.clear = 3;
   reg.nbits = 8;
-	memset(ser1_buf,0x00,MAX_BITS);
+	memset(ser0_buf,0x00,MAX_BITS);
   shiftreg_clear(&reg);
   while (1) {
     /* shift register output */
-    shiftreg_iterate(&reg, ser1_buf, itercounter);
+    shiftreg_iterate(&reg, ser0_buf, itercounter);
     itercounter++;
     if(itercounter > 127){
 	itercounter=1;
@@ -129,10 +129,10 @@ void main(void)
 				}
 				/* Switch based on opcode and return the opcode if successful, 0x00 if not */
 				switch(payload[0]){
-					case SET_PWM:
+					case SET_PWM0:
 						if(payload[1] < MAX_BITS){
-							ser1_buf[payload[1]] = payload[2];
-							rstatus = SET_PWM;	
+							ser0_buf[payload[1]] = payload[2];
+							rstatus = SET_PWM0;	
 						}
 						break;
 					case SET_NBITS:
@@ -146,7 +146,8 @@ void main(void)
 						break;												
 				}
 				
-				pru_rpmsg_send(&transport, dst, src, &rstatus, 1);
+				/* Currently unnecessary
+         * pru_rpmsg_send(&transport, dst, src, &rstatus, 1); */
 			}
 		}
     }
