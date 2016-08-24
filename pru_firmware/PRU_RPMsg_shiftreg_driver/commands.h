@@ -1,6 +1,6 @@
 typedef enum {
   NOOP,
   SET_PWM,
-  RESERVED,
+  SET_PWM_ALL,
   SET_NBITS
 } opcode_t;

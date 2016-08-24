@@ -81,7 +81,7 @@ void main(void)
   /* Shift register output types */
   shiftreg_t reg;
   char ser1_buf[MAX_BITS];
-  unsigned char itercounter;
+  register unsigned char itercounter;
   char rstatus; 
   /* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
@@ -140,6 +140,9 @@ void main(void)
 							reg.nbits = *((uint16_t *)(payload+1));
 							rstatus = SET_NBITS;
 						}
+						break;
+					case SET_PWM_ALL:
+						memset(ser1_buf,payload[2],MAX_BITS);
 						break;												
 				}
 				
