@@ -9,7 +9,7 @@
 CC = gcc
 
 # compile-time flags
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 
 # define any directories containing header files other than the default
 #
