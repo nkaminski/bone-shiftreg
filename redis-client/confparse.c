@@ -46,7 +46,7 @@ cfg_t *parse_conf(const char *filename)
 {
 
   cfg_opt_t opts[] = {
-    CFG_STR("pru-remoteproc-file", "/dev/rproc30", CFGF_NONE),
+    CFG_STR("pru-remoteproc-file", "/dev/rpmsg_pru30", CFGF_NONE),
     CFG_STR("redis-host", NULL, CFGF_NODEFAULT),
     CFG_INT("redis-port", 6379, CFGF_NONE),
     CFG_BOOL("redis-authrequired", cfg_false, CFGF_NONE),
