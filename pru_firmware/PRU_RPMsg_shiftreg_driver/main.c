@@ -81,6 +81,8 @@ void main(void)
   /* Shift register output types */
   shiftreg_t reg;
   char ser0_buf[MAX_BITS];
+  char ser1_buf[MAX_BITS];
+  char ser2_buf[MAX_BITS];
   unsigned char itercounter;
   char rstatus; 
   /* Allow OCP master port access by the PRU so the PRU can read external memories */
@@ -101,16 +103,20 @@ void main(void)
 	
   /* Initilaize the shift register output subsystem */
   itercounter=0;
-  reg.ser = 0;
+  reg.ser0 = 0;
+  reg.ser1 = 4;
+  reg.ser2 = 5;
   reg.serclk = 1;
   reg.latch = 2;
   reg.clear = 3;
   reg.nbits = 8;
 	memset(ser0_buf,0x00,MAX_BITS);
+	memset(ser1_buf,0x00,MAX_BITS);
+	memset(ser2_buf,0x00,MAX_BITS);
   shiftreg_clear(&reg);
   while (1) {
     /* shift register output */
-    shiftreg_iterate(&reg, ser0_buf, itercounter);
+    shiftreg_iterate(&reg, ser0_buf, ser1_buf, ser2_buf, itercounter);
     itercounter++;
     if(itercounter > 127){
 	itercounter=1;
@@ -135,7 +141,19 @@ void main(void)
 							rstatus = SET_PWM0;	
 						}
 						break;
-					case SET_NBITS:
+					case SET_PWM1:
+						if(payload[1] < MAX_BITS){
+							ser1_buf[payload[1]] = payload[2];
+							rstatus = SET_PWM1;	
+						}
+						break;
+          case SET_PWM2:
+						if(payload[1] < MAX_BITS){
+							ser2_buf[payload[1]] = payload[2];
+							rstatus = SET_PWM2;	
+						}
+						break;
+          case SET_NBITS:
 						if(*((uint16_t *)(payload+1)) <= MAX_BITS){
 							reg.nbits = *((uint16_t *)(payload+1));
 							rstatus = SET_NBITS;
