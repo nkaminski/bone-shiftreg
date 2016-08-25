@@ -52,7 +52,9 @@ cfg_t *parse_conf(const char *filename)
     CFG_BOOL("redis-authrequired", cfg_false, CFGF_NONE),
     CFG_STR("redis-password", "anonymous", CFGF_NONE),
     CFG_INT("start-address", 0, CFGF_NODEFAULT),
-    CFG_INT("num-channels", 0, CFGF_NODEFAULT),
+    CFG_INT("ser0-num-channels", 0, CFGF_NONE),
+    CFG_INT("ser1-num-channels", 0, CFGF_NONE),
+    CFG_INT("ser2-num-channels", 0, CFGF_NONE),
     CFG_END()
   };
 
@@ -61,7 +63,9 @@ cfg_t *parse_conf(const char *filename)
   cfg_set_validate_func(cfg, "redis-host", conf_validate_isset);
   cfg_set_validate_func(cfg, "redis-port", conf_validate_pnznumeric);
   cfg_set_validate_func(cfg, "start-address", conf_validate_pnumeric);
-  cfg_set_validate_func(cfg, "num-channels", conf_validate_pnznumeric);
+  cfg_set_validate_func(cfg, "ser0-num-channels", conf_validate_pnumeric);
+  cfg_set_validate_func(cfg, "ser1-num-channels", conf_validate_pnumeric);
+  cfg_set_validate_func(cfg, "ser2-num-channels", conf_validate_pnumeric);
   
   switch (cfg_parse(cfg, filename)) {
     case CFG_FILE_ERROR:
