@@ -63,7 +63,7 @@ cfg_t *parse_conf(const char *filename)
   cfg_set_validate_func(cfg, "redis-host", conf_validate_isset);
   cfg_set_validate_func(cfg, "redis-port", conf_validate_pnznumeric);
   cfg_set_validate_func(cfg, "start-address", conf_validate_pnumeric);
-  cfg_set_validate_func(cfg, "ser0-num-channels", conf_validate_pnumeric);
+  cfg_set_validate_func(cfg, "ser0-num-channels", conf_validate_pnznumeric);
   cfg_set_validate_func(cfg, "ser1-num-channels", conf_validate_pnumeric);
   cfg_set_validate_func(cfg, "ser2-num-channels", conf_validate_pnumeric);
   

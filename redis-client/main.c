@@ -7,7 +7,12 @@
 #include <hiredis.h>
 #include "confparse.h"
 #include "io.h"
-#define max(a,b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
+
+inline int imax(int x, int y){
+  if(x>y)
+     return x;
+     return y;
+}
 
 int summation(unsigned int start, unsigned int end, int *list){
   int x, acc;
@@ -19,21 +24,22 @@ int summation(unsigned int start, unsigned int end, int *list){
 }
 
 int setChannelIfOurs(int iofd, int chan, int val, int startaddr, int *pinsperchan, int nchan){
-  int i, brkaddr;
+  int i, brkaddr, prevbrk;
   //Does this channel belong to us? If so, update!
   if(chan < startaddr){
     printf("channel %d belongs to a board at lower address.\n", chan);
     return -1;
   }
-
-  for(i=nchan-1; i>=0; i++){
-    brkaddr = summation(0,i,pinsperchan);
-    if(chan < (startaddr + brkaddr)){
-      printf("Setting pin %d, global channel %d, local channel %d to %d\n", i, chan, chan-startaddr-brkaddr, val);  
-      if(io_set_pwm(iofd, i, chan-startaddr-brkaddr, val) >= 0)
+  prevbrk = startaddr;
+  for(i=0; i<nchan; i++){
+    brkaddr = summation(0,i, pinsperchan);
+    if(chan >= prevbrk && chan < brkaddr){
+      printf("Setting pin %d, global channel %d, local channel %d to %d\n", i, chan, chan-startaddr+prevbrk, val);  
+      if(io_set_pwm(iofd, i, chan-startaddr+prevbrk, val) >= 0)
         return chan;
       else
         return -2;
+      prevbrk=brkaddr;
     }
   }
   printf("channel %d belongs to a board at higher address.\n",chan);
@@ -44,7 +50,7 @@ int mainLoop (char *confpath) {
   cfg_t *cfg;
   redisContext *c ;
   redisReply *reply;
-  int iofd, retval=-1;
+  int iofd, retval=-1, maxchain;
   int outbpc[3];
   /* Localize messages & types according to environment, since v2.9 */
   setlocale(LC_MESSAGES, "");
@@ -66,7 +72,14 @@ int mainLoop (char *confpath) {
     goto cleanupconf;
   }
   /* Set output channel count */
-  if(io_set_nchannels(iofd, max(cfg_getint(cfg,"ser0-num-channels"),max(cfg_getint(cfg,"ser1-num-channels"),cfg_getint(cfg,"ser2-num-channels"))) < 0)){
+  maxchain = imax(cfg_getint(cfg,"ser0-num-channels"),imax(cfg_getint(cfg,"ser1-num-channels"),cfg_getint(cfg,"ser2-num-channels")));
+  if(maxchain == 0){
+    fprintf(stderr,"At least one output chain must have more then zero channels!\n");
+    goto cleanupio;
+  }
+ 
+  if(io_set_nchannels(iofd, maxchain) < 0){
+    fprintf(stderr,"Failed to set max chain length to %d!\n", maxchain);
     goto cleanupio;
   }
   /* Establish Redis connection */
@@ -160,7 +173,9 @@ int main (int argc, char **argv) {
   while(1){
     printf("Beaglebone PWM shift register redis client starting...\n");
     rv = mainLoop(confpath); 
-    fprintf(stderr,"Main loop exited with code %d, restarting in 5 seconds\n", rv);
+    fprintf(stderr,"Main loop exited with code %d\n", rv);
+    if(rv == -2)
+	break;
     usleep(5E6);
   }
   return 0;

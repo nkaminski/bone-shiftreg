@@ -18,7 +18,7 @@ void shiftreg_clear(shiftreg_t *sr){
 
 }
 
-void shiftreg_iterate(shiftreg_t *sr, char *ser0_val, char *ser1_val, char ser2_val, unsigned char count){
+void shiftreg_iterate(shiftreg_t *sr, char *ser0_val, char *ser1_val, char *ser2_val, unsigned char count){
   int i, end;
   end = min(sr->nbits, MAX_BITS);
 	R30_CLR(sr->serclk);

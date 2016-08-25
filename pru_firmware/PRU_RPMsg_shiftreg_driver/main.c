@@ -69,23 +69,26 @@
 
 uint8_t payload[RPMSG_BUF_SIZE];
 
+/* Shift register output types */
+shiftreg_t reg;
+unsigned char itercounter;
+
+/* Danger! Keep global since these are larger than the stack! */
+char ser0_buf[MAX_BITS];
+char ser1_buf[MAX_BITS];
+char ser2_buf[MAX_BITS];
+	
 /*
  * main.c
  */
 void main(void)
 {
-  /* Control messaging types */
+	/* Control messaging types */
 	struct pru_rpmsg_transport transport;
 	uint16_t src, dst, len;
 	volatile uint8_t *status;
-  /* Shift register output types */
-  shiftreg_t reg;
-  char ser0_buf[MAX_BITS];
-  char ser1_buf[MAX_BITS];
-  char ser2_buf[MAX_BITS];
-  unsigned char itercounter;
-  char rstatus; 
-  /* Allow OCP master port access by the PRU so the PRU can read external memories */
+	char rstatus; 
+	/* Allow OCP master port access by the PRU so the PRU can read external memories */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 
 	/* Clear the status of the PRU-ICSS system event that the ARM will use to 'kick' us */
@@ -100,28 +103,28 @@ void main(void)
 
 	/* Create the RPMsg channel between the PRU and ARM user space using the transport structure. */
 	while (pru_rpmsg_channel(RPMSG_NS_CREATE, &transport, CHAN_NAME, CHAN_DESC, CHAN_PORT) != PRU_RPMSG_SUCCESS);
-	
-  /* Initilaize the shift register output subsystem */
-  itercounter=0;
-  reg.ser0 = 0;
-  reg.ser1 = 4;
-  reg.ser2 = 5;
-  reg.serclk = 1;
-  reg.latch = 2;
-  reg.clear = 3;
-  reg.nbits = 8;
+
+	/* Initilaize the shift register output subsystem */
+	itercounter=0;
+	reg.ser0 = 0;
+	reg.ser1 = 4;
+	reg.ser2 = 5;
+	reg.serclk = 1;
+	reg.latch = 2;
+	reg.clear = 3;
+	reg.nbits = 8;
 	memset(ser0_buf,0x00,MAX_BITS);
 	memset(ser1_buf,0x00,MAX_BITS);
 	memset(ser2_buf,0x00,MAX_BITS);
-  shiftreg_clear(&reg);
-  while (1) {
-    /* shift register output */
-    shiftreg_iterate(&reg, ser0_buf, ser1_buf, ser2_buf, itercounter);
-    itercounter++;
-    if(itercounter > 127){
-	itercounter=1;
-    }
-    /* Control message handling */
+	shiftreg_clear(&reg);
+	while (1) {
+		/* shift register output */
+		shiftreg_iterate(&reg, ser0_buf, ser1_buf, ser2_buf, itercounter);
+		itercounter++;
+		if(itercounter > 127){
+			itercounter=1;
+		}
+		/* Control message handling */
 		/* Check bit 30 of register R31 to see if the ARM has kicked us */
 		if (__R31 & HOST_INT) {
 			/* Clear the event status */
@@ -147,26 +150,28 @@ void main(void)
 							rstatus = SET_PWM1;	
 						}
 						break;
-          case SET_PWM2:
+					case SET_PWM2:
 						if(payload[1] < MAX_BITS){
 							ser2_buf[payload[1]] = payload[2];
 							rstatus = SET_PWM2;	
 						}
 						break;
-          case SET_NBITS:
+					case SET_NBITS:
 						if(*((uint16_t *)(payload+1)) <= MAX_BITS){
 							reg.nbits = *((uint16_t *)(payload+1));
 							rstatus = SET_NBITS;
 						}
 						break;
 					case SET_PWM_ALL:
+						memset(ser0_buf,payload[2],MAX_BITS);
 						memset(ser1_buf,payload[2],MAX_BITS);
+						memset(ser2_buf,payload[2],MAX_BITS);
 						break;												
 				}
-				
+
 				/* Currently unnecessary
-         * pru_rpmsg_send(&transport, dst, src, &rstatus, 1); */
+				 * pru_rpmsg_send(&transport, dst, src, &rstatus, 1); */
 			}
 		}
-    }
+	}
 }
