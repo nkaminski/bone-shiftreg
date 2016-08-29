@@ -55,6 +55,7 @@ cfg_t *parse_conf(const char *filename)
     CFG_INT("ser0-num-channels", 0, CFGF_NONE),
     CFG_INT("ser1-num-channels", 0, CFGF_NONE),
     CFG_INT("ser2-num-channels", 0, CFGF_NONE),
+    CFG_BOOL("persistent-state", cfg_true, CFGF_NONE),
     CFG_END()
   };
 
