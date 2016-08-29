@@ -108,6 +108,15 @@ int mainLoop (char *confpath) {
       goto cleanupall;
     }
   }
+  reply = redisCommand(c, "PING");
+  if(!reply || reply->type == REDIS_REPLY_ERROR){
+    fprintf(stderr,"Unable to execute Redis commands, are you authenticated if necessary?\n");
+    retval = -2;
+    freeReplyObject(reply);
+    goto cleanupall;
+  } else { 
+    freeReplyObject(reply);
+  }
   /* If we have gotten here we have initialized successfully */
   retval=0;
   /* Message handling loop */
