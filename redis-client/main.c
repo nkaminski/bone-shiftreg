@@ -128,21 +128,28 @@ int mainLoop (char *confpath) {
 	statestr=malloc(sizeof(DEFSTATE)+1);
 	strcpy(statestr,DEFSTATE);
 
-	cfg = parse_conf(confpath == NULL ? "bone-shiftout.conf" : confpath);
+	cfg = parse_conf(confpath == NULL ? "/etc/bone-shiftreg.conf" : confpath);
 	if (!cfg) {
 		fprintf(stderr,"Error parsing configuration file!\n");
+		retval=-2;
 		goto cleanupnone;
 	}
 	outbpc[0] = cfg_getint(cfg,"ser0-num-channels");
 	outbpc[1] = cfg_getint(cfg,"ser1-num-channels");
 	outbpc[2] = cfg_getint(cfg,"ser2-num-channels");
+	if(cfg_getbool(cfg,"debug")){
+		debug = 1;
+	} else {
+		debug = 0;
+	}
 	start = cfg_getint(cfg,"start-address");
 	numchan = summation(0,NUMPINS-1, outbpc);
 	printf("This board has a total of %d channels\n", numchan);
 
 	/* Open remoteproc device */
 	if((iofd = io_init(cfg_getstr(cfg,"pru-remoteproc-file"))) < 0){
-		fprintf(stderr,"Failed to open remoteproc device file\n");
+		fprintf(stderr,"Failed to open remoteproc device file! Firmware still booting?\n");
+		retval = -1;
 		goto cleanupconf;
 	}
 	/* Set output channel count */
@@ -154,6 +161,7 @@ int mainLoop (char *confpath) {
 
 	if(io_set_nchannels(iofd, maxchain) < 0){
 		fprintf(stderr,"Failed to set max chain length to %d!\n", maxchain);
+		retval = -2;
 		goto cleanupio;
 	}
 	/* Establish Redis connection */
@@ -187,7 +195,6 @@ int mainLoop (char *confpath) {
 	reply = redisCommand(c, "PING");
 	if(!reply || reply->type == REDIS_REPLY_ERROR){
 		fprintf(stderr,"Unable to execute Redis commands, are you authenticated if necessary?\n");
-		retval = -2;
 		if(reply)
 			freeReplyObject(reply);
 		goto cleanupall;
@@ -197,8 +204,10 @@ int mainLoop (char *confpath) {
 	/* If we have gotten here we have initialized successfully */
 	/* Restore state */ 
 	if(cfg_getbool(cfg,"persistent-state")){
-		if(restoreState(c, iofd, start, start+numchan, outbpc, NUMPINS) == -2)
+		if(restoreState(c, iofd, start, start+numchan, outbpc, NUMPINS) == -2){
+			retval = -2;
 			goto cleanupall;
+		}
 	}
 	retval=0;
 	/* Message handling loop */
@@ -286,7 +295,7 @@ int main (int argc, char **argv) {
 		rv = mainLoop(confpath); 
 		fprintf(stderr,"Main loop exited with code %d\n", rv);
 		if(rv == -2)
-			break;
+			return 1;
 		if(rv < 0)
 			usleep(5E6);
 	}

@@ -1,0 +1,10 @@
+[Unit]
+Description=Beaglebone PRU Shift Register PWM driver Redis client
+After=redis-server.service
+Requires=redis-server.service
+
+[Service]
+ExecStart=/opt/bone-shiftreg/redis-client /etc/bone-shiftreg.conf
+
+[Install]
+WantedBy=multi-user.target
