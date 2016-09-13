@@ -53,7 +53,7 @@ $(TARGET): $(OBJECTS) $(LINKER_COMMAND_FILE)
 	@echo ''
 	@echo 'Building target: $@'
 	@echo 'Invoking: PRU Linker'
-	$(PRU_CGT)/bin/clpru $(CFLAGS) -z -i$(PRU_CGT)/lib -i$(PRU_CGT)/include $(LFLAGS) -o $(TARGET) $(OBJECTS) -m$(MAP) $(LINKER_COMMAND_FILE) --library=libc.a $(LIBS)
+	clpru $(CFLAGS) -z -i$(PRU_CGT)/lib -i$(PRU_CGT)/include $(LFLAGS) -o $(TARGET) $(OBJECTS) -m$(MAP) $(LINKER_COMMAND_FILE) --library=libc.a $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ''
 	@echo 'Output files can be found in the "$(GEN_DIR)" directory'
@@ -64,7 +64,7 @@ $(GEN_DIR)/%.object: %.c
 	@echo ''
 	@echo 'Building file: $<'
 	@echo 'Invoking: PRU Compiler'
-	$(PRU_CGT)/bin/clpru --include_path=$(PRU_CGT)/include $(INCLUDE) $(CFLAGS) -fe $@ $<
+	clpru --include_path=$(PRU_CGT)/include $(INCLUDE) $(CFLAGS) -fe $@ $<
 
 .PHONY: all clean
 
